@@ -5,6 +5,11 @@
 This program is download support program to that site published pictures.  
 This program is written by "Common Lisp", and assume sbcl.
 
+### Dependency Library
+- dexador
+- plump
+- clss  
+Use "quickload". Therefore need setup the "quicklisp".
 #### example:
 ```
 sbcl --load main.lisp
