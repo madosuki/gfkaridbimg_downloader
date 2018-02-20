@@ -106,7 +106,7 @@
   (let ((n (coerce (clss:select "a" (clss:select "div" *body*)) 'list)))
     (dolist (l n)
       (let ((check (plump:attribute l "data-lightbox")))
-        (cond ((eq check "hitokoma")
+        (cond ((equal check "hitokoma")
                (let ((result (getHref l)))
                  (let ((title (getTitle l)))
                    (let ((url (connectString (list *baseurl* result))))
@@ -123,7 +123,7 @@
   (let ((n (coerce (clss:select "a" (clss:select "div" *body*)) 'list)))
     (dolist (l n)
       (let ((check (plump:attribute l "data-lightbox")))
-        (cond ((eq check "gfmusic-card-set")
+        (cond ((equal check "gfmusic-card-set")
                (let ((result (getHref l)))
                  (let ((title (getTitle l)))
                    ;; First
@@ -138,7 +138,7 @@
                           ;; Check duplicate.
                           (let ((dupcount 0))
                             (dolist (dupstr *onpulist*)
-                              (if (eq dupstr title)
+                              (if (equal dupstr title)
                                   (incf dupcount)))
                             ;; Get Second Card.
                             (cond ((and (= dupcount 1) (= *count* 2))
