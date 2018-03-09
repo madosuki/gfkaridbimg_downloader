@@ -9,7 +9,7 @@ This program is written by "Common Lisp", and assume sbcl.
 - dexador
 - plump
 - clss  
-Use "quickload". Therefore need setup the "quicklisp".
+this project used "quickload". Therefore need setup the "quicklisp".
 #### example:
 ```
 sbcl --load main.lisp
