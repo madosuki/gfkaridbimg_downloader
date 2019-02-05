@@ -1,6 +1,9 @@
 (ql:quickload :dexador)
 (ql:quickload :plump)
 (ql:quickload :clss)
+(ql:quickload :babel)
+
+(setf babel:*default-character-encoding* :utf-8)
 
 ;; This function is put image file.
 (defun writeimg(filename img)
@@ -36,7 +39,7 @@
 (defparameter *rootdir* "")
 
 ;; Set dir and Create work dir.
-(defun creterootdir()
+(defun createRootDir()
   (setq *rootdir* (connectString (list "./girls/" *numstr*)))
   (ensure-directories-exist (connectString (list *rootdir* "/"))))
 
@@ -69,14 +72,14 @@
 (defun getProfileImgAndScenarioImg()
   (let* ((path (connectString (list *rootdir* "/profile_and_scenario_images/")))
          (profile_fpath (connectString (list path "profile_" *numstr* ".png")))
-         (scenario_fpath (connectString (list path "/scenario_" *numstr* ".png")))
+         (scenario_fpath (connectString (list path "scenario_" *numstr* ".png")))
          (profile_url (connectString (list *baseurl* "/images/profile/profile_" *numstr* ".png")))
          (scenario_url (connectString (list *baseurl* "/images/scenario/girl/270x570/" *numstr* ".png"))))
-    (if (null (probe-file (make-pathname :name profile_fpath)))
+    (when (null (probe-file (make-pathname :name profile_fpath)))
         (let ((profile_img (dex:get profile_url)))
           (ensure-directories-exist path)
           (writeimg profile_fpath profile_img)))
-    (if (null (probe-file (make-pathname :name scenario_fpath)))
+    (when (null (probe-file (make-pathname :name scenario_fpath)))
         (let ((scenario_img (dex:get scenario_url)))
               (writeimg scenario_fpath scenario_img)))))
 
@@ -86,16 +89,15 @@
     (ensure-directories-exist path)
     (let ((n (coerce (clss:select "a.cl" *body*) 'list)))
       (dolist (l n)
-        (let* ((result (getHref l))
-               (title (getTitle l))
-               (url (connectString (list *baseurl* result)))
-               (fpath (connectString (list path title ".jpg")))
-               (checkexists (make-pathname :name fpath)))
-          (if (null (probe-file checkexists))
-              (let ((img (dex:get url)))
-                (writeimg fpath img))))))))
-
-
+        (print (plump:attribute l "title"))))))
+        ;; (let* ((result (getHref l))
+        ;;        (title (getTitle l))
+        ;;        (url (connectString (list *baseurl* result)))
+        ;;        (fpath (connectString (list path title ".jpg")))
+        ;;        (checkexists (make-pathname :name fpath)))
+        ;;   (when (null (probe-file checkexists))
+        ;;     (let ((img (dex:get url)))
+        ;;       (writeimg fpath img))))))))
 
 ;; This function is get PetiCards.
 (defun getPetitcard()
