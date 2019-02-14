@@ -3,8 +3,6 @@
 (ql:quickload :clss)
 (ql:quickload :babel)
 
-(setf babel:*default-character-encoding* :utf-8)
-
 ;; This function is put image file.
 (defun writeimg(filename img)
   (with-open-file (stream (make-pathname :name filename)
@@ -50,8 +48,9 @@
   `(setq *numstr* (IntToString10 ,x)))
 
 (defun getHtml(s)
-  (let ((html (dex:get s)))
-    (let ((result (plump:parse html)))
+  (let ((binary (dex:get s :force-binary t)))
+    (let* ((html (sb-ext:octets-to-string binary))
+           (result (plump:parse html)))
       result)))
 
 (defmacro msg()
@@ -89,15 +88,14 @@
     (ensure-directories-exist path)
     (let ((n (coerce (clss:select "a.cl" *body*) 'list)))
       (dolist (l n)
-        (print (plump:attribute l "title"))))))
-        ;; (let* ((result (getHref l))
-        ;;        (title (getTitle l))
-        ;;        (url (connectString (list *baseurl* result)))
-        ;;        (fpath (connectString (list path title ".jpg")))
-        ;;        (checkexists (make-pathname :name fpath)))
-        ;;   (when (null (probe-file checkexists))
-        ;;     (let ((img (dex:get url)))
-        ;;       (writeimg fpath img))))))))
+        (let* ((result (getHref l))
+               (title (getTitle l))
+               (url (connectString (list *baseurl* result)))
+               (fpath (connectString (list path title ".jpg")))
+               (checkexists (make-pathname :name fpath)))
+          (when (null (probe-file checkexists))
+            (let ((img (dex:get url)))
+              (writeimg fpath img))))))))
 
 ;; This function is get PetiCards.
 (defun getPetitcard()
