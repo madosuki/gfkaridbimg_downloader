@@ -20,7 +20,7 @@
   (reduce (lambda (x y) (format nil "~A~A" x y)) l))
 
 ;; Base URL
-(defvar *baseurl* "http://gfkari.gamedbs.jp")
+(defvar *baseurl* "https://gfkari.gamedbs.jp")
 
 ;; Detail Page URL
 (defvar *detail* (connect-string-list (list *baseurl* "/girl/detail/")))
@@ -34,21 +34,30 @@
 ;; Output Dir
 (defparameter *rootdir* "")
 
+(defstruct setting-data
+  (body)
+  (numstr "")
+  (rootdir ""))
+
 ;; Set dir and Create work dir.
-(defun create-rootdir ()
-  (setq *rootdir* (connect-string-list (list "./girls/" *numstr*)))
-  (ensure-directories-exist (connect-string-list (list *rootdir* "/"))))
+(defun get-and-create-rootdir (path-string struct)
+  (let ((path (connect-string-list
+               (list path-string
+                     (setting-data-numstr struct)))))
+    (ensure-directories-exist (connect-string-list (list path "/")))
+    path))
 
 (defmacro int-to-string-10 (i)
   `(write-to-string ,i :base 10))
 
-(defmacro set-num (x)
-  `(setq *numstr* (int-to-string-10 ,x)))
+(defmacro get-num-str (x)
+  `(int-to-string-10 ,x))
 
 (defun get-html (s)
   (let ((binary (dex:get s :force-binary t)))
     (let* ((html (sb-ext:octets-to-string binary))
            (result (plump:parse html)))
+      (format t "~A~%" html)
       result)))
 
 (defmacro msg ()
@@ -60,18 +69,17 @@
 (defmacro get-title (l)
   `(plump:attribute ,l "title"))
 
-(defun set-body ()
-  (setq *body*
-        (get-html
-         (connect-string-list (list *detail* *numstr*)))))
+(defun get-body (numstr)
+  (get-html
+   (connect-string-list (list *detail* numstr))))
 
 ;; This funciton is get profile image and Scenario standing image.
-(defun get-profile-and-scenario-images ()
-  (let* ((path (connect-string-list (list *rootdir* "/profile_and_scenario_images/")))
-         (profile_fpath (connect-string-list (list path "profile_" *numstr* ".png")))
-         (scenario_fpath (connect-string-list (list path "scenario_" *numstr* ".png")))
-         (profile_url (connect-string-list (list *baseurl* "/images/profile/profile_" *numstr* ".png")))
-         (scenario_url (connect-string-list (list *baseurl* "/images/scenario/girl/270x570/" *numstr* ".png"))))
+(defun get-profile-and-scenario-images (struct)
+  (let* ((path (connect-string-list (list (setting-data-rootdir struct) "/profile_and_scenario_images/")))
+         (profile_fpath (connect-string-list (list path "profile_" (setting-data-numstr struct) ".png")))
+         (scenario_fpath (connect-string-list (list path "scenario_" (setting-data-numstr struct) ".png")))
+         (profile_url (connect-string-list (list *baseurl* "/images/profile/profile_" (setting-data-numstr struct) ".png")))
+         (scenario_url (connect-string-list (list *baseurl* "/images/scenario/girl/270x570/" (setting-data-numstr struct) ".png"))))
     (when (null (probe-file (make-pathname :name profile_fpath)))
         (let ((profile_img (dex:get profile_url)))
           (ensure-directories-exist path)
@@ -81,25 +89,30 @@
               (writeimg scenario_fpath scenario_img)))))
 
 ;; This function is get MainCards.
-(defun get-main-cards ()
-  (let ((path (connect-string-list (list *rootdir* "/main/"))))
+(defun get-main-cards (struct)
+  (let ((path (connect-string-list (list (setting-data-rootdir struct) "/main/"))))
     (ensure-directories-exist path)
-    (let ((n (coerce (clss:select "a.cl" *body*) 'list)))
-      (dolist (l n)
-        (let* ((result (get-href l))
-               (title (get-title l))
-               (url (connect-string-list (list *baseurl* result)))
-               (fpath (connect-string-list (list path title ".jpg")))
-               (checkexists (make-pathname :name fpath)))
-          (when (null (probe-file checkexists))
-            (let ((img (dex:get url)))
-              (writeimg fpath img))))))))
+    (labels ((save-top-images (n)
+               (dolist (l n)
+                 (let* ((result (get-href l))
+                        (title (get-title l))
+                        (url (connect-string-list (list *baseurl* result)))
+                        (fpath (connect-string-list (list path title ".jpg")))
+                        (expect-file-path (make-pathname :name fpath)))
+                   (when (null (probe-file expect-file-path))
+                     (let ((img (dex:get url)))
+                       (writeimg fpath img)))))))
+      (let ((table-list (coerce (clss:select "a.cgc" (setting-data-body struct)) 'list)))
+        (dolist (target table-list)
+          (let* ((href (plump:attribute target "href"))
+                 (html (get-html href)))
+            (save-top-images (coerce (clss:select "a.cl" html) 'list))))))))
 
 ;; This function is get PetiCards.
-(defun get-petit-cards ()
-  (let ((path (connect-string-list (list *rootdir* "/peti/"))))
+(defun get-petit-cards (struct)
+  (let ((path (connect-string-list (list (setting-data-rootdir struct) "/peti/"))))
     (ensure-directories-exist path)
-    (let ((n (coerce (clss:select "a" (clss:select "div.petitgirl-img" *body*)) 'list))
+    (let ((n (coerce (clss:select "a" (clss:select "div.petitgirl-img" (setting-data-body struct))) 'list))
           (x 0))
       (dolist (l n)
         (let* ((result (get-href l))
@@ -111,10 +124,10 @@
           (incf x))))))
 
 ;; This function is get Hitokoma.
-(defun get-hitokoma ()
-  (let ((path (connect-string-list (list *rootdir* "/hitokoma/"))))
+(defun get-hitokoma (struct)
+  (let ((path (connect-string-list (list (setting-data-rootdir struct) "/hitokoma/"))))
     (ensure-directories-exist path)
-    (let ((n (coerce (clss:select "a" (clss:select "div" *body*)) 'list)))
+    (let ((n (coerce (clss:select "a" (clss:select "div" (setting-data-body struct))) 'list)))
       (dolist (l n)
         (let ((check (plump:attribute l "data-lightbox")))
           (cond ((equal check "hitokoma")
@@ -127,12 +140,12 @@
                          (writeimg fpath img)))))))))))
 
 ;; This function is get ♪Cards.
-(defun get-onpu-cards ()
-  (let ((path (connect-string-list (list *rootdir* "/onpu/")))
+(defun get-onpu-cards (struct)
+  (let ((path (connect-string-list (list (setting-data-rootdir struct) "/onpu/")))
         (count 0)
         (onpu-list (list "")))
     (ensure-directories-exist path)
-    (let ((n (coerce (clss:select "a" (clss:select "div" *body*)) 'list)))
+    (let ((n (coerce (clss:select "a" (clss:select "div" (setting-data-body struct))) 'list)))
       (dolist (l n)
         (let ((check (plump:attribute l "data-lightbox")))
           (cond ((equal check "gfmusic-card-set")
