@@ -12,21 +12,18 @@
                           :if-does-not-exist :create
                           )
     (format t "Now Writing ~A~%" filename)
-    (dolist (target (coerce img 'list)) 
+    (dolist (target (coerce img 'list))
       (write-byte target stream))
     (format t "Done!~%~%")))
 
-(defun connect-string (l)
-  (let ((x ""))
-    (dolist (o l)
-      (setq x (concatenate 'string x o)))
-    x))
+(defun connect-string-list (l)
+  (reduce (lambda (x y) (format nil "~A~A" x y)) l))
 
 ;; Base URL
 (defvar *baseurl* "http://gfkari.gamedbs.jp")
 
 ;; Detail Page URL
-(defvar *detail* (connect-string (list *baseurl* "/girl/detail/")))
+(defvar *detail* (connect-string-list (list *baseurl* "/girl/detail/")))
 
 ;; HTML Body
 (defvar *body*)
@@ -39,8 +36,8 @@
 
 ;; Set dir and Create work dir.
 (defun create-rootdir ()
-  (setq *rootdir* (connect-string (list "./girls/" *numstr*)))
-  (ensure-directories-exist (connect-string (list *rootdir* "/"))))
+  (setq *rootdir* (connect-string-list (list "./girls/" *numstr*)))
+  (ensure-directories-exist (connect-string-list (list *rootdir* "/"))))
 
 (defmacro int-to-string-10 (i)
   `(write-to-string ,i :base 10))
@@ -66,15 +63,15 @@
 (defun set-body ()
   (setq *body*
         (get-html
-         (connect-string (list *detail* *numstr*)))))
+         (connect-string-list (list *detail* *numstr*)))))
 
 ;; This funciton is get profile image and Scenario standing image.
 (defun get-profile-and-scenario-images ()
-  (let* ((path (connect-string (list *rootdir* "/profile_and_scenario_images/")))
-         (profile_fpath (connect-string (list path "profile_" *numstr* ".png")))
-         (scenario_fpath (connect-string (list path "scenario_" *numstr* ".png")))
-         (profile_url (connect-string (list *baseurl* "/images/profile/profile_" *numstr* ".png")))
-         (scenario_url (connect-string (list *baseurl* "/images/scenario/girl/270x570/" *numstr* ".png"))))
+  (let* ((path (connect-string-list (list *rootdir* "/profile_and_scenario_images/")))
+         (profile_fpath (connect-string-list (list path "profile_" *numstr* ".png")))
+         (scenario_fpath (connect-string-list (list path "scenario_" *numstr* ".png")))
+         (profile_url (connect-string-list (list *baseurl* "/images/profile/profile_" *numstr* ".png")))
+         (scenario_url (connect-string-list (list *baseurl* "/images/scenario/girl/270x570/" *numstr* ".png"))))
     (when (null (probe-file (make-pathname :name profile_fpath)))
         (let ((profile_img (dex:get profile_url)))
           (ensure-directories-exist path)
@@ -85,14 +82,14 @@
 
 ;; This function is get MainCards.
 (defun get-main-cards ()
-  (let ((path (connect-string (list *rootdir* "/main/"))))
+  (let ((path (connect-string-list (list *rootdir* "/main/"))))
     (ensure-directories-exist path)
     (let ((n (coerce (clss:select "a.cl" *body*) 'list)))
       (dolist (l n)
         (let* ((result (get-href l))
                (title (get-title l))
-               (url (connect-string (list *baseurl* result)))
-               (fpath (connect-string (list path title ".jpg")))
+               (url (connect-string-list (list *baseurl* result)))
+               (fpath (connect-string-list (list path title ".jpg")))
                (checkexists (make-pathname :name fpath)))
           (when (null (probe-file checkexists))
             (let ((img (dex:get url)))
@@ -100,14 +97,14 @@
 
 ;; This function is get PetiCards.
 (defun get-petit-cards ()
-  (let ((path (connect-string (list *rootdir* "/peti/"))))
+  (let ((path (connect-string-list (list *rootdir* "/peti/"))))
     (ensure-directories-exist path)
     (let ((n (coerce (clss:select "a" (clss:select "div.petitgirl-img" *body*)) 'list))
           (x 0))
       (dolist (l n)
         (let* ((result (get-href l))
-               (url (connect-string (list *baseurl* result)))
-               (fpath (connect-string (list path (int-to-string-10 x) ".png"))))
+               (url (connect-string-list (list *baseurl* result)))
+               (fpath (connect-string-list (list path (int-to-string-10 x) ".png"))))
           (if (null (probe-file (make-pathname :name fpath)))
               (let ((img (dex:get url)))
                 (writeimg fpath img)))
@@ -115,7 +112,7 @@
 
 ;; This function is get Hitokoma.
 (defun get-hitokoma ()
-  (let ((path (connect-string (list *rootdir* "/hitokoma/"))))
+  (let ((path (connect-string-list (list *rootdir* "/hitokoma/"))))
     (ensure-directories-exist path)
     (let ((n (coerce (clss:select "a" (clss:select "div" *body*)) 'list)))
       (dolist (l n)
@@ -123,15 +120,15 @@
           (cond ((equal check "hitokoma")
                  (let* ((result (get-href l))
                         (title (get-title l))
-                        (fpath (connect-string (list path title ".png"))))
+                        (fpath (connect-string-list (list path title ".png"))))
                    (if (null (probe-file (make-pathname :name fpath)))
-                       (let* ((url (connect-string (list *baseurl* result)))
+                       (let* ((url (connect-string-list (list *baseurl* result)))
                               (img (dex:get url)))
                          (writeimg fpath img)))))))))))
 
 ;; This function is get ♪Cards.
 (defun get-onpu-cards ()
-  (let ((path (connect-string (list *rootdir* "/onpu/")))
+  (let ((path (connect-string-list (list *rootdir* "/onpu/")))
         (count 0)
         (onpu-list (list "")))
     (ensure-directories-exist path)
@@ -144,11 +141,11 @@
                    ;; First
                    (cond ((= count 0)
                           (push title (cdr (last onpu-list)))
-                          (let ((fpath (connect-string (list path title ".jpg"))))
+                          (let ((fpath (connect-string-list (list path title ".jpg"))))
                             (when (null (probe-file (make-pathname :name fpath)))
-                                (let* ((url (connect-string (list *baseurl* result)))
+                                (let* ((url (connect-string-list (list *baseurl* result)))
                                        (img (dex:get url)))
-                                  (writeimg (connect-string (list path title ".jpg")) img))))
+                                  (writeimg (connect-string-list (list path title ".jpg")) img))))
                           (setq count 2))
                          ;; Second
                          ((/= count 0)
@@ -160,27 +157,27 @@
                             ;; Get Second Card.
                             (cond ((and (= dupcount 1) (= count 2))
                                    (push title (cdr (last onpu-list)))
-                                   (let ((fpath (connect-string (list path title  "2.jpg"))))
+                                   (let ((fpath (connect-string-list (list path title  "2.jpg"))))
                                      (when (null (probe-file (make-pathname :name fpath)))
-                                         (let* ((url (connect-string (list *baseurl* result)))
+                                         (let* ((url (connect-string-list (list *baseurl* result)))
                                                 (img (dex:get url)))
                                            (writeimg fpath img))))
                                    (incf count))
                                   ;; Get Third Card
                                   ((and (= dupcount 0) (= count 3)) 
                                    (push title (cdr (last onpu-list)))
-                                   (let ((fpath (connect-string (list path title ".jpg"))))
+                                   (let ((fpath (connect-string-list (list path title ".jpg"))))
                                      (when (null (probe-file (make-pathname :name fpath)))
-                                         (let* ((url (connect-string (list *baseurl* result)))
+                                         (let* ((url (connect-string-list (list *baseurl* result)))
                                                 (img (dex:get url)))
                                            (writeimg fpath img))))
                                    (setq count 1))
                                   ;; Reset
                                   ((= dupcount 0) 
                                    (push title (cdr (last onpu-list)))
-                                   (let ((fpath (connect-string (list path title ".jpg"))))
+                                   (let ((fpath (connect-string-list (list path title ".jpg"))))
                                      (when (null (probe-file (make-pathname :name fpath)))
-                                         (let* ((url (connect-string (list *baseurl* result)))
+                                         (let* ((url (connect-string-list (list *baseurl* result)))
                                                 (img (dex:get url)))
                                            (writeimg fpath img)))
                                      (incf count))

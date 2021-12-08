@@ -11,5 +11,5 @@
   (get-petit-cards)
   (get-main-cards) t)
 
-(if (equal (main) t)
-    (progn (format t "~%Downloads Completed!~%")))
+#+clisp (if (equal (main) t)
+           (progn (format t "~%Downloads Completed!~%")))
