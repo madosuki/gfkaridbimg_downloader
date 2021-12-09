@@ -2,6 +2,7 @@
 (ql:quickload :plump)
 (ql:quickload :clss)
 (ql:quickload :babel)
+(ql:quickload :cl-ppcre)
 
 ;; This function is put image file.
 (defun writeimg (filename img)
@@ -57,7 +58,6 @@
   (let ((binary (dex:get s :force-binary t)))
     (let* ((html (sb-ext:octets-to-string binary))
            (result (plump:parse html)))
-      (format t "~A~%" html)
       result)))
 
 (defmacro msg ()
@@ -104,9 +104,19 @@
                        (writeimg fpath img)))))))
       (let ((table-list (coerce (clss:select "a.cgc" (setting-data-body struct)) 'list)))
         (dolist (target table-list)
-          (let* ((href (plump:attribute target "href"))
-                 (html (get-html href)))
-            (save-top-images (coerce (clss:select "a.cl" html) 'list))))))))
+          (let ((href (plump:attribute target "href"))
+                (base-url "https://gfkari.gamedbs.jp/card/group/"))
+            ;; (save-top-images (coerce (clss:select "a.cl" html) 'list))
+            (when href
+              (multiple-value-bind (a b)
+                  (ppcre:scan "[0-9]+$" href)
+                (let* ((id-string (subseq href a b))
+                       (id-integer (parse-integer id-string :junk-allowed t)))
+                  (when id-integer
+                    (let ((html (get-html (format nil "~A~A" base-url id-integer))))
+                      (when html
+                        (save-top-images (coerce (clss:select "a.cl" html) 'list))))))))
+            ))))))
 
 ;; This function is get PetiCards.
 (defun get-petit-cards (struct)
