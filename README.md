@@ -15,13 +15,5 @@ this project used "quickload" and "roswell". Therefore need setup "[roswell](htt
 ```
 ./gfkaridbimg_downloader.ros specific_number directory_path
 ```
-
-at SBCL REPL  
-```
-59
-```
-Then input number. Please reference from each girls detail page url of the "GF(仮) カードギャラリー".  
-#### Example Number
-```
 http://gfkari.gamedbs.jp/girl/detail/1 <- Let's input this number
 ```
