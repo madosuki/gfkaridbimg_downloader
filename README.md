@@ -15,5 +15,6 @@ this project used "quickload" and "roswell". Therefore need setup "[roswell](htt
 ```
 ./gfkaridbimg_downloader.ros specific_number directory_path
 ```
+```
 http://gfkari.gamedbs.jp/girl/detail/1 <- Let's input this number
 ```
