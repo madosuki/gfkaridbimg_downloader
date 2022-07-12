@@ -9,7 +9,7 @@ This program is written by "Common Lisp", and assume sbcl.
 - dexador
 - plump
 - clss  
-this project used "quickload" and "roswell". Therefore need setup "roswell".  
+this project used "quickload" and "roswell". Therefore need setup "[roswell](https://github.com/roswell/roswell)".  
 
 #### Example run
 ```
